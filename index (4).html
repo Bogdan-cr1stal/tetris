@@ -1,0 +1,687 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tetris Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 2.8rem;
+      background: linear-gradient(to right, #ff6b6b, #4ecdc4);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+    
+    .game-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 25px;
+      max-width: 900px;
+      width: 100%;
+    }
+    
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    canvas {
+      border: 3px solid #333;
+      border-radius: 5px;
+      background-color: #111;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      touch-action: none;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    button {
+      padding: 14px 20px;
+      font-size: 1.2rem;
+      background: linear-gradient(145deg, #4a4a8a, #3a3a6a);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      min-width: 70px;
+    }
+    
+    button:hover {
+      background: linear-gradient(145deg, #5a5a9a, #4a4a7a);
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .info-panel {
+      background: rgba(30, 30, 60, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+      min-width: 220px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .panel-section {
+      background: rgba(40, 40, 80, 0.6);
+      border-radius: 8px;
+      padding: 15px;
+    }
+    
+    .panel-title {
+      font-size: 1.2rem;
+      color: #4ecdc4;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+    }
+    
+    .score-display {
+      font-size: 2.2rem;
+      font-weight: bold;
+      text-align: center;
+      color: #ffd166;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    .next-piece {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .next-canvas {
+      width: 100px;
+      height: 100px;
+      background-color: #111;
+      border-radius: 5px;
+      border: 2px solid #444;
+    }
+    
+    .history {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .history-score {
+      color: #ffd166;
+      font-weight: bold;
+    }
+    
+    .game-over {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+      z-index: 10;
+      display: none;
+    }
+    
+    .game-over h2 {
+      font-size: 3rem;
+      color: #ff6b6b;
+      margin-bottom: 20px;
+    }
+    
+    .game-over p {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      color: #ffd166;
+    }
+    
+    .mobile-instructions {
+      display: none;
+      margin-top: 15px;
+      color: #aaa;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 10px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    
+    @media (max-width: 768px) {
+      .game-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .info-panel {
+        width: 100%;
+        max-width: 300px;
+      }
+      
+      .controls {
+        gap: 8px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 1.1rem;
+        min-width: 60px;
+      }
+      
+      .mobile-instructions {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>TETRIS PRO</h1>
+    <div class="subtitle">Класична гра з сучасним дизайном</div>
+  </div>
+  
+  <div class="game-container">
+    <div class="game-area">
+      <canvas id="gameCanvas" width="300" height="500"></canvas>
+      <div class="mobile-instructions">
+        Використовуйте стрілки для контролю або кнопки нижче
+      </div>
+      
+      <div class="controls">
+        <button id="left">⬅️ Вліво</button>
+        <button id="rot">🔄 Повернути</button>
+        <button id="right">Вправо ➡️</button>
+        <button id="down">Швидше ⬇️</button>
+        <button id="pause">⏸️ Пауза</button>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <div class="panel-section">
+        <div class="panel-title">РАХУНОК</div>
+        <div class="score-display" id="score">0</div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-title">НАСТУПНА ФІГУРА</div>
+        <div class="next-piece">
+          <canvas id="nextCanvas" width="100" height="100"></canvas>
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-title">РЕКОРДИ</div>
+        <div class="history" id="history">
+          <!-- History will be populated by JavaScript -->
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-title">КОМАНДИ</div>
+        <div style="font-size: 0.9rem; line-height: 1.4;">
+          <p>← → — переміщення</p>
+          <p>↑ — поворот</p>
+          <p>↓ — пришвидшити</p>
+          <p>P — пауза</p>
+          <p>R — перезапуск</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-over" id="gameOver">
+    <h2>ГРА ЗАКІНЧЕНА!</h2>
+    <p id="finalScore">Ваш рахунок: 0</p>
+    <button id="restart">🔄 ЗАНОВО</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const nextCanvas = document.getElementById('nextCanvas');
+const nextCtx = nextCanvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+const gameOverScreen = document.getElementById('gameOver');
+const finalScoreElement = document.getElementById('finalScore');
+const historyElement = document.getElementById('history');
+
+const COLS = 10, ROWS = 20, SIZE = 25;
+const board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+
+// Кольори для різних фігур
+const COLORS = [
+  '#FF5252', // Червоний - I
+  '#FFEB3B', // Жовтий - O
+  '#9C27B0', // Фіолетовий - T
+  '#FF9800', // Помаранчевий - L
+  '#2196F3', // Синій - J
+  '#4CAF50', // Зелений - S
+  '#00BCD4', // Бірюзовий - Z
+];
+
+const pieces = [
+  // I
+  [[1,1,1,1]],
+  // O
+  [[1,1],[1,1]],
+  // T
+  [[0,1,0],[1,1,1]],
+  // L
+  [[1,0],[1,0],[1,1]],
+  // J
+  [[0,1],[0,1],[1,1]],
+  // S
+  [[0,1,1],[1,1,0]],
+  // Z
+  [[1,1,0],[0,1,1]],
+];
+
+let score = 0;
+let level = 1;
+let linesCleared = 0;
+let gameRunning = true;
+let gamePaused = false;
+let nextPieceIndex = Math.floor(Math.random() * pieces.length);
+let history = JSON.parse(localStorage.getItem('tetrisHistory')) || [];
+
+// Завантаження історії
+function loadHistory() {
+  historyElement.innerHTML = '';
+  // Сортуємо історію за спаданням рахунку
+  history.sort((a, b) => b.score - a.score);
+  
+  // Показуємо тільки топ-5 результатів
+  const topScores = history.slice(0, 5);
+  
+  topScores.forEach((item, index) => {
+    const historyItem = document.createElement('div');
+    historyItem.className = 'history-item';
+    historyItem.innerHTML = `
+      <span>#${index + 1}: ${new Date(item.date).toLocaleDateString()}</span>
+      <span class="history-score">${item.score}</span>
+    `;
+    historyElement.appendChild(historyItem);
+  });
+  
+  // Якщо історія порожня, показуємо повідомлення
+  if (history.length === 0) {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'history-item';
+    emptyMsg.textContent = "Немає історії ігор";
+    emptyMsg.style.color = "#888";
+    historyElement.appendChild(emptyMsg);
+  }
+}
+
+// Збереження результату в історію
+function saveToHistory() {
+  history.push({
+    score: score,
+    date: new Date().toISOString(),
+    level: level
+  });
+  
+  // Зберігаємо тільки 10 останніх результатів
+  if (history.length > 10) {
+    history = history.slice(-10);
+  }
+  
+  localStorage.setItem('tetrisHistory', JSON.stringify(history));
+  loadHistory();
+}
+
+// Початкове завантаження історії
+loadHistory();
+
+let p = spawn();
+
+function spawn(){
+  const currentPieceIndex = nextPieceIndex;
+  const shape = JSON.parse(JSON.stringify(pieces[currentPieceIndex]));
+  nextPieceIndex = Math.floor(Math.random() * pieces.length);
+  return { 
+    shape, 
+    x: Math.floor(COLS/2) - Math.floor(shape[0].length/2), 
+    y: 0,
+    color: COLORS[currentPieceIndex]
+  };
+}
+
+function drawNextPiece() {
+  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  
+  const shape = pieces[nextPieceIndex];
+  const color = COLORS[nextPieceIndex];
+  const cellSize = 20;
+  const offsetX = (nextCanvas.width - shape[0].length * cellSize) / 2;
+  const offsetY = (nextCanvas.height - shape.length * cellSize) / 2;
+  
+  for(let r = 0; r < shape.length; r++) {
+    for(let c = 0; c < shape[r].length; c++) {
+      if(shape[r][c]) {
+        nextCtx.fillStyle = color;
+        nextCtx.fillRect(
+          offsetX + c * cellSize, 
+          offsetY + r * cellSize, 
+          cellSize - 1, 
+          cellSize - 1
+        );
+        
+        // Додаємо трохи стилю для фігури
+        nextCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        nextCtx.fillRect(
+          offsetX + c * cellSize + 2, 
+          offsetY + r * cellSize + 2, 
+          cellSize - 5, 
+          cellSize - 5
+        );
+      }
+    }
+  }
+}
+
+function rotate(mat){
+  const h = mat.length, w = mat[0].length;
+  const res = Array.from({length:w}, ()=>Array(h).fill(0));
+  for(let r=0;r<h;r++) for(let c=0;c<w;c++) res[c][h-1-r]=mat[r][c];
+  return res;
+}
+
+function collide(nx, ny, shape=p.shape){
+  for(let r=0;r<shape.length;r++){
+    for(let c=0;c<shape[r].length;c++){
+      if(!shape[r][c]) continue;
+      const x = nx + c, y = ny + r;
+      if(x<0 || x>=COLS || y<0 || y>=ROWS) return true;
+      if(board[y][x]) return true;
+    }
+  }
+  return false;
+}
+
+function merge(){
+  for(let r=0;r<p.shape.length;r++){
+    for(let c=0;c<p.shape[r].length;c++){
+      if(p.shape[r][c]){
+        board[p.y+r][p.x+c] = p.color;
+      }
+    }
+  }
+}
+
+function clearLines(){
+  let lines = 0;
+  for(let r=ROWS-1;r>=0;r--){
+    if(board[r].every(v=>v!==0)){
+      board.splice(r,1);
+      board.unshift(Array(COLS).fill(0));
+      lines++;
+      r++; // Перевіряємо цей рядок знову, оскільки зсунули вниз
+    }
+  }
+  
+  if(lines > 0) {
+    // Оновлюємо рахунок
+    const linePoints = [0, 100, 300, 500, 800]; // Бали за 0, 1, 2, 3, 4 ліній
+    score += linePoints[lines] * level;
+    linesCleared += lines;
+    
+    // Підвищуємо рівень кожні 10 ліній
+    level = Math.floor(linesCleared / 10) + 1;
+    
+    updateScore();
+  }
+}
+
+function draw(){
+  // Очищуємо canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Малюємо сітку
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.lineWidth = 1;
+  
+  // Вертикальні лінії
+  for(let c = 0; c <= COLS; c++) {
+    ctx.beginPath();
+    ctx.moveTo(c * SIZE, 0);
+    ctx.lineTo(c * SIZE, ROWS * SIZE);
+    ctx.stroke();
+  }
+  
+  // Горизонтальні лінії
+  for(let r = 0; r <= ROWS; r++) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * SIZE);
+    ctx.lineTo(COLS * SIZE, r * SIZE);
+    ctx.stroke();
+  }
+  
+  // Малюємо фіксовані блоки на полі
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      if(board[r][c]){
+        ctx.fillStyle = board[r][c];
+        ctx.fillRect(c*SIZE, r*SIZE, SIZE-1, SIZE-1);
+        
+        // Додаємо 3D-ефект
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(c*SIZE + 2, r*SIZE + 2, SIZE - 5, SIZE - 5);
+        
+        // Рамка
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(c*SIZE, r*SIZE, SIZE-1, SIZE-1);
+      }
+    }
+  }
+  
+  // Малюємо поточну фігуру
+  for(let r=0;r<p.shape.length;r++){
+    for(let c=0;c<p.shape[r].length;c++){
+      if(p.shape[r][c]){
+        ctx.fillStyle = p.color;
+        ctx.fillRect((p.x+c)*SIZE, (p.y+r)*SIZE, SIZE-1, SIZE-1);
+        
+        // Додаємо 3D-ефект
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect((p.x+c)*SIZE + 2, (p.y+r)*SIZE + 2, SIZE - 5, SIZE - 5);
+        
+        // Рамка
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect((p.x+c)*SIZE, (p.y+r)*SIZE, SIZE-1, SIZE-1);
+      }
+    }
+  }
+  
+  // Малюємо наступну фігуру
+  drawNextPiece();
+}
+
+function updateScore() {
+  scoreElement.textContent = score;
+}
+
+function tick(){
+  if (!gameRunning || gamePaused) return;
+  
+  if(!collide(p.x, p.y+1)){
+    p.y++;
+  } else {
+    merge();
+    clearLines();
+    p = spawn();
+    if(collide(p.x, p.y)) {
+      gameOver();
+    }
+  }
+  draw();
+}
+
+// Швидкість падіння залежить від рівня
+function getGameSpeed() {
+  // Швидкість зменшується з кожним рівнем
+  return Math.max(100, 500 - (level - 1) * 50);
+}
+
+// Запускаємо гру зі змінною швидкістю
+let gameInterval = setInterval(tick, getGameSpeed());
+
+// Оновлюємо інтервал, коли змінюється рівень
+function updateGameSpeed() {
+  clearInterval(gameInterval);
+  gameInterval = setInterval(tick, getGameSpeed());
+}
+
+function gameOver() {
+  gameRunning = false;
+  clearInterval(gameInterval);
+  
+  finalScoreElement.textContent = `Ваш рахунок: ${score}`;
+  gameOverScreen.style.display = 'flex';
+  
+  saveToHistory();
+}
+
+function restartGame() {
+  // Очищаємо поле
+  for(let r=0;r<ROWS;r++) board[r].fill(0);
+  
+  // Скидаємо змінні
+  score = 0;
+  level = 1;
+  linesCleared = 0;
+  gameRunning = true;
+  
+  // Оновлюємо відображення рахунку
+  updateScore();
+  
+  // Створюємо нову фігуру
+  nextPieceIndex = Math.floor(Math.random() * pieces.length);
+  p = spawn();
+  
+  // Приховуємо екран завершення гри
+  gameOverScreen.style.display = 'none';
+  
+  // Перезапускаємо інтервал
+  clearInterval(gameInterval);
+  gameInterval = setInterval(tick, getGameSpeed());
+  
+  // Малюємо початковий стан
+  draw();
+}
+
+function move(dx, dy){
+  if (!gameRunning || gamePaused) return;
+  
+  const nx = p.x+dx, ny = p.y+dy;
+  if(!collide(nx, ny)){ 
+    p.x=nx; 
+    p.y=ny; 
+    draw(); 
+  }
+}
+
+function doRotate(){
+  if (!gameRunning || gamePaused) return;
+  
+  const rs = rotate(p.shape);
+  if(!collide(p.x, p.y, rs)){ 
+    p.shape=rs; 
+    draw(); 
+  }
+}
+
+function togglePause() {
+  gamePaused = !gamePaused;
+  document.getElementById('pause').textContent = gamePaused ? '▶️ Продовжити' : '⏸️ Пауза';
+  
+  if (gamePaused) {
+    clearInterval(gameInterval);
+  } else {
+    gameInterval = setInterval(tick, getGameSpeed());
+  }
+}
+
+// Обробка клавіатури
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') move(-1,0);
+  if(e.key==='ArrowRight') move(1,0);
+  if(e.key==='ArrowDown') move(0,1);
+  if(e.key==='ArrowUp') doRotate();
+  if(e.key === 'p' || e.key === 'P' || e.key === ' ') togglePause();
+  if(e.key === 'r' || e.key === 'R') restartGame();
+});
+
+// Прив'язка кнопок
+left.onclick = ()=>move(-1,0);
+right.onclick = ()=>move(1,0);
+down.onclick = ()=>move(0,1);
+rot.onclick = ()=>doRotate();
+pause.onclick = ()=>togglePause();
+document.getElementById('restart').onclick = restartGame;
+
+// Початкове малювання
+draw();
+</script>
+</body>
+</html>
