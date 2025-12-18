@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      color: #2d3748;
+      font-size: 28px;
+      margin-bottom: 5px;
+      background: linear-gradient(to right, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      background: #f7fafc;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2d3748;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      min-width: 70px;
+    }
+    
+    .primary-btn {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .secondary-btn {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .game-board {
+      display: grid;
+      gap: 2px;
+      background: #cbd5e0;
+      padding: 2px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+    
+    .cell:hover {
+      transform: scale(1.05);
+    }
+    
+    .hidden {
+      background: linear-gradient(145deg, #a0aec0, #cbd5e0);
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .revealed {
+      background: white;
+      box-shadow: none;
+    }
+    
+    .flagged {
+      background: linear-gradient(145deg, #feb2b2, #fc8181);
+      color: white;
+    }
+    
+    .mine {
+      background: linear-gradient(145deg, #f56565, #c53030);
+      color: white;
+    }
+    
+    .number-1 { color: #4299e1; }
+    .number-2 { color: #48bb78; }
+    .number-3 { color: #f56565; }
+    .number-4 { color: #805ad5; }
+    .number-5 { color: #d69e2e; }
+    .number-6 { color: #38b2ac; }
+    .number-7 { color: #000000; }
+    .number-8 { color: #718096; }
+    
+    .game-over {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      z-index: 10;
+      display: none;
+    }
+    
+    .result-message {
+      color: white;
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .win { color: #68d391; }
+    .lose { color: #fc8181; }
+    
+    .difficulty-selector {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .difficulty-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      min-width: 60px;
+    }
+    
+    .active-difficulty {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .instructions {
+      font-size: 12px;
+      color: #718096;
+      text-align: center;
+      margin-top: 15px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 Minesweeper</h1>
+      <div class="instructions">
+        ЛКМ - відкрити клітинку • ПКМ - поставити прапорець
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="mines-count">10</div>
+        <div class="stat-label">Мін</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="time">0</div>
+        <div class="stat-label">Секунд</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="flags">0</div>
+        <div class="stat-label">Прапорці</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="primary-btn" id="restart-btn">🔄 Почати знову</button>
+      <button class="secondary-btn" id="hint-btn">💡 Підказка</button>
+    </div>
+    
+    <div class="difficulty-selector">
+      <button class="difficulty-btn secondary-btn active-difficulty" data-difficulty="easy">Легко</button>
+      <button class="difficulty-btn secondary-btn" data-difficulty="medium">Середньо</button>
+      <button class="difficulty-btn secondary-btn" data-difficulty="hard">Складно</button>
+    </div>
+    
+    <div class="game-board" id="game-board"></div>
+    
+    <div class="game-over" id="game-over">
+      <div class="result-message" id="result-message"></div>
+      <button class="primary-btn" id="play-again-btn">🔄 Грати знову</button>
+    </div>
+  </div>
+
+  <script>
+    const gameState = {
+      difficulty: 'easy',
+      board: [],
+      revealed: [],
+      flagged: [],
+      mines: [],
+      gameOver: false,
+      gameWon: false,
+      startTime: null,
+      timer: null,
+      timeElapsed: 0,
+      mineCount: 10,
+      boardSize: { rows: 8, cols: 8 }
+    };
+
+    const difficultySettings = {
+      easy: { rows: 8, cols: 8, mines: 10 },
+      medium: { rows: 12, cols: 12, mines: 20 },
+      hard: { rows: 16, cols: 16, mines: 40 }
+    };
+
+    const DOM = {
+      board: document.getElementById('game-board'),
+      minesCount: document.getElementById('mines-count'),
+      flags: document.getElementById('flags'),
+      time: document.getElementById('time'),
+      gameOver: document.getElementById('game-over'),
+      resultMessage: document.getElementById('result-message'),
+      restartBtn: document.getElementById('restart-btn'),
+      playAgainBtn: document.getElementById('play-again-btn'),
+      hintBtn: document.getElementById('hint-btn'),
+      difficultyBtns: document.querySelectorAll('.difficulty-btn')
+    };
+
+    // Ініціалізація гри
+    function initGame() {
+      const settings = difficultySettings[gameState.difficulty];
+      gameState.boardSize = { rows: settings.rows, cols: settings.cols };
+      gameState.mineCount = settings.mines;
+      
+      resetGameState();
+      createBoard();
+      placeMines();
+      calculateNumbers();
+      renderBoard();
+      updateStats();
+      startTimer();
+    }
+
+    function resetGameState() {
+      const { rows, cols } = gameState.boardSize;
+      
+      gameState.board = Array(rows).fill().map(() => Array(cols).fill(0));
+      gameState.revealed = Array(rows).fill().map(() => Array(cols).fill(false));
+      gameState.flagged = Array(rows).fill().map(() => Array(cols).fill(false));
+      gameState.mines = [];
+      gameState.gameOver = false;
+      gameState.gameWon = false;
+      gameState.timeElapsed = 0;
+      
+      DOM.gameOver.style.display = 'none';
+      clearInterval(gameState.timer);
+      gameState.startTime = Date.now();
+    }
+
+    function createBoard() {
+      DOM.board.style.gridTemplateColumns = `repeat(${gameState.boardSize.cols}, 1fr)`;
+      DOM.board.innerHTML = '';
+      
+      for (let r = 0; r < gameState.boardSize.rows; r++) {
+        for (let c = 0; c < gameState.boardSize.cols; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell hidden';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          
+          // Ліва кнопка миші
+          cell.addEventListener('click', () => revealCell(r, c));
+          
+          // Права кнопка миші
+          cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            toggleFlag(r, c);
+          });
+          
+          DOM.board.appendChild(cell);
+        }
+      }
+    }
+
+    function placeMines() {
+      const { rows, cols } = gameState.boardSize;
+      const totalCells = rows * cols;
+      const minePositions = new Set();
+      
+      while (minePositions.size < gameState.mineCount) {
+        const pos = Math.floor(Math.random() * totalCells);
+        minePositions.add(pos);
+      }
+      
+      for (const pos of minePositions) {
+        const r = Math.floor(pos / cols);
+        const c = pos % cols;
+        gameState.board[r][c] = 'M';
+        gameState.mines.push([r, c]);
+      }
+    }
+
+    function calculateNumbers() {
+      const { rows, cols } = gameState.boardSize;
+      const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      
+      for (const [r, c] of gameState.mines) {
+        for (const [dr, dc] of directions) {
+          const nr = r + dr;
+          const nc = c + dc;
+          
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && 
+              gameState.board[nr][nc] !== 'M') {
+            gameState.board[nr][nc]++;
+          }
+        }
+      }
+    }
+
+    function renderBoard() {
+      const { rows, cols } = gameState.boardSize;
+      
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = DOM.board.children[r * cols + c];
+          const isRevealed = gameState.revealed[r][c];
+          const isFlagged = gameState.flagged[r][c];
+          const value = gameState.board[r][c];
+          
+          cell.className = 'cell';
+          
+          if (isFlagged) {
+            cell.className += ' flagged';
+            cell.textContent = '🚩';
+          } else if (isRevealed) {
+            cell.className += ' revealed';
+            if (value === 'M') {
+              cell.className += ' mine';
+              cell.textContent = '💣';
+            } else if (value > 0) {
+              cell.className += ` number-${value}`;
+              cell.textContent = value;
+            } else {
+              cell.textContent = '';
+            }
+          } else {
+            cell.className += ' hidden';
+            cell.textContent = '';
+          }
+          
+          // Додаємо підсвітку для переможних мін
+          if (gameState.gameWon && value === 'M') {
+            cell.className += ' flagged';
+            cell.textContent = '🚩';
+          }
+        }
+      }
+    }
+
+    function revealCell(r, c) {
+      if (gameState.gameOver || gameState.gameWon || gameState.flagged[r][c]) return;
+      if (gameState.revealed[r][c]) return;
+      
+      // Якщо це перший хід і клітинка містить міну - перегенеруємо поле
+      const isFirstMove = gameState.revealed.flat().every(cell => !cell) && 
+                         gameState.flagged.flat().every(cell => !cell);
+      
+      if (isFirstMove && gameState.board[r][c] === 'M') {
+        // Переміщуємо міну в інше місце
+        gameState.board[r][c] = 0;
+        let newR, newC;
+        do {
+          newR = Math.floor(Math.random() * gameState.boardSize.rows);
+          newC = Math.floor(Math.random() * gameState.boardSize.cols);
+        } while ((newR === r && newC === c) || gameState.board[newR][newC] === 'M');
+        
+        gameState.board[newR][newC] = 'M';
+        gameState.mines = gameState.mines.filter(([mr, mc]) => !(mr === r && mc === c));
+        gameState.mines.push([newR, newC]);
+        calculateNumbers();
+      }
+      
+      gameState.revealed[r][c] = true;
+      
+      // Якщо міна - гра закінчена
+      if (gameState.board[r][c] === 'M') {
+        gameOver(false);
+        return;
+      }
+      
+      // Якщо порожня клітинка - відкриваємо сусідні
+      if (gameState.board[r][c] === 0) {
+        revealNeighbors(r, c);
+      }
+      
+      checkWin();
+      renderBoard();
+      updateStats();
+    }
+
+    function revealNeighbors(r, c) {
+      const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      
+      for (const [dr, dc] of directions) {
+        const nr = r + dr;
+        const nc = c + dc;
+        
+        if (nr >= 0 && nr < gameState.boardSize.rows && 
+            nc >= 0 && nc < gameState.boardSize.cols &&
+            !gameState.revealed[nr][nc] && !gameState.flagged[nr][nc]) {
+          gameState.revealed[nr][nc] = true;
+          
+          if (gameState.board[nr][nc] === 0) {
+            revealNeighbors(nr, nc);
+          }
+        }
+      }
+    }
+
+    function toggleFlag(r, c) {
+      if (gameState.gameOver || gameState.gameWon || gameState.revealed[r][c]) return;
+      
+      gameState.flagged[r][c] = !gameState.flagged[r][c];
+      renderBoard();
+      updateStats();
+      checkWin();
+    }
+
+    function checkWin() {
+      const { rows, cols } = gameState.boardSize;
+      let allNonMinesRevealed = true;
+      let allMinesFlagged = true;
+      
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const isMine = gameState.board[r][c] === 'M';
+          const isRevealed = gameState.revealed[r][c];
+          const isFlagged = gameState.flagged[r][c];
+          
+          if (!isMine && !isRevealed) {
+            allNonMinesRevealed = false;
+          }
+          
+          if (isMine && !isFlagged) {
+            allMinesFlagged = false;
+          }
+        }
+      }
+      
+      if (allNonMinesRevealed || allMinesFlagged) {
+        gameOver(true);
+      }
+    }
+
+    function gameOver(isWin) {
+      gameState.gameOver = true;
+      gameState.gameWon = isWin;
+      clearInterval(gameState.timer);
+      
+      // Відкриваємо всі міни при програші
+      if (!isWin) {
+        for (const [r, c] of gameState.mines) {
+          gameState.revealed[r][c] = true;
+        }
+      }
+      
+      DOM.resultMessage.textContent = isWin ? '🎉 Ви перемогли!' : '💥 Ви програли!';
+      DOM.resultMessage.className = `result-message ${isWin ? 'win' : 'lose'}`;
+      DOM.gameOver.style.display = 'flex';
+      
+      renderBoard();
+    }
+
+    function startTimer() {
+      clearInterval(gameState.timer);
+      gameState.startTime = Date.now();
+      
+      gameState.timer = setInterval(() => {
+        gameState.timeElapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+        DOM.time.textContent = gameState.timeElapsed;
+      }, 1000);
+    }
+
+    function updateStats() {
+      const { rows, cols } = gameState.boardSize;
+      const flagCount = gameState.flagged.flat().filter(Boolean).length;
+      const remainingMines = gameState.mineCount - flagCount;
+      
+      DOM.minesCount.textContent = remainingMines;
+      DOM.flags.textContent = flagCount;
+    }
+
+    function giveHint() {
+      if (gameState.gameOver || gameState.gameWon) return;
+      
+      const { rows, cols } = gameState.boardSize;
+      const unrevealedCells = [];
+      
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (!gameState.revealed[r][c] && !gameState.flagged[r][c] && 
+              gameState.board[r][c] !== 'M') {
+            unrevealedCells.push([r, c]);
+          }
+        }
+      }
+      
+      if (unrevealedCells.length > 0) {
+        const [r, c] = unrevealedCells[Math.floor(Math.random() * unrevealedCells.length)];
+        
+        // Підсвічуємо клітинку
+        const cell = DOM.board.children[r * cols + c];
+        cell.style.boxShadow = '0 0 15px #ffd700, inset 0 0 15px #ffd700';
+        cell.style.transition = 'box-shadow 0.3s';
+        
+        setTimeout(() => {
+          cell.style.boxShadow = '';
+        }, 1000);
+      }
+    }
+
+    function changeDifficulty(difficulty) {
+      gameState.difficulty = difficulty;
+      
+      // Оновлюємо активну кнопку
+      DOM.difficultyBtns.forEach(btn => {
+        if (btn.dataset.difficulty === difficulty) {
+          btn.className = 'difficulty-btn active-difficulty';
+        } else {
+          btn.className = 'difficulty-btn secondary-btn';
+        }
+      });
+      
+      initGame();
+    }
+
+    // Налаштування подій
+    DOM.restartBtn.addEventListener('click', initGame);
+    DOM.playAgainBtn.addEventListener('click', initGame);
+    DOM.hintBtn.addEventListener('click', giveHint);
+
+    DOM.difficultyBtns.forEach(btn => {
+      btn.addEventListener('click', () => changeDifficulty(btn.dataset.difficulty));
+    });
+
+    // Запуск гри при завантаженні
+    document.addEventListener('DOMContentLoaded', initGame);
+
+    // Додаємо клавіатурне керування
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') initGame();
+      if (e.key === 'h' || e.key === 'H') giveHint();
+      if (e.key === '1') changeDifficulty('easy');
+      if (e.key === '2') changeDifficulty('medium');
+      if (e.key === '3') changeDifficulty('hard');
+    });
+  </script>
+</body>
+</html>
